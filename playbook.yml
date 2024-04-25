@@ -1,30 +1,40 @@
 #########################################################
-# DO Community Playbooks: Wordpress on Ubuntu 18.04 LAMP
+# Playbook: Installation de Wordpress
 #########################################################
 ---
 - hosts: all
   become: true
+
+  # Emplacement d'un fichier de variables
   vars_files:
     - vars/default.yml
 
   tasks:
-    - name: Install prerequisites
-      apt: name=aptitude update_cache=yes state=latest force_apt_get=yes
-      tags: [ system ]
+    # ========================================
+    # Installation des paquets
+    # ========================================
+    - name: Upgrade packages
+      apt: upgrade=safe update_cache=yes
 
     - name: Install LAMP Packages
       apt: name={{ item }} update_cache=yes state=latest
-      loop: [ 'apache2', 'mysql-server', 'python3-pymysql', 'php', 'php-mysql', 'libapache2-mod-php' ]
+      loop: [ 'apache2', 'mariadb-server', 'python3-pymysql', 'php', 'php-mysql', 'libapache2-mod-php' ]
       tags: [ system ]
 
     - name: Install PHP Extensions
       apt: name={{ item }} update_cache=yes state=latest
+      # Utilisation d'une variable définie dans vars/default.yaml
       loop: "{{ php_modules }}"
       tags: [ system ]
 
+
+
+    # ========================================
     # Apache Configuration
+    # ========================================
     - name: Create document root
       file:
+        # Utilisation d'une variable définie dans vars/default.yml
         path: "/var/www/{{ http_host }}"
         state: directory
         owner: "www-data"
@@ -34,33 +44,53 @@
 
     - name: Set up Apache VirtualHost
       template:
+        # Utilisation du fichier de configuration déjà préparé (extension j2 pour éviter les google dorks)
         src: "files/apache.conf.j2"
         dest: "/etc/apache2/sites-available/{{ http_conf }}"
+      # Handler de redémarrage
       notify: Reload Apache
       tags: [ apache ]
 
     - name: Enable rewrite module
       shell: /usr/sbin/a2enmod rewrite
+      # Handler de redémarrage
       notify: Reload Apache
       tags: [ apache ]
 
     - name: Enable new site
       shell: /usr/sbin/a2ensite {{ http_conf }}
+      # Handler de redémarrage
       notify: Reload Apache
       tags: [ apache ]
 
     - name: Disable default Apache site
       shell: /usr/sbin/a2dissite 000-default.conf
+      # Handler de redémarrage
       notify: Restart Apache
       tags: [ apache ]
 
+
+
+    # ========================================
     # MySQL Configuration
-    - name: Set the root password
+    # ========================================
+    # Update the root password
+    - name: update mysql root password for all root accounts
       mysql_user:
         name: root
+        host: "{{ item }}"
+
         password: "{{ mysql_root_password }}"
-        login_unix_socket: /var/run/mysqld/mysqld.sock
-      tags: [ mysql, mysql-root ]
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        check_implicit_admin: yes
+        priv: "*.*:ALL,GRANT"
+      with_items:
+        - "{{ ansible_hostname }}"
+        - 127.0.0.1
+        - ::1
+        - localhost
+      tags: [ mysql ]
 
     - name: Remove all anonymous user accounts
       mysql_user:
@@ -97,15 +127,11 @@
         login_password: "{{ mysql_root_password }}"
       tags: [ mysql ]
 
-    # UFW Configuration
-    - name: "UFW - Allow HTTP on port {{ http_port }}"
-      ufw:
-        rule: allow
-        port: "{{ http_port }}"
-        proto: tcp
-      tags: [ system ]
 
+
+    # ========================================
     # WordPress Configuration
+    # ========================================
     - name: Download and unpack latest WordPress
       unarchive:
         src: https://wordpress.org/latest.tar.gz
@@ -137,7 +163,14 @@
         dest: "/var/www/{{ http_host }}/wordpress/wp-config.php"
       tags: [ wordpress ]
 
+
+
   handlers:
+    - name: Restart the MySQL service
+      service:
+        name: mariadb
+        state: reloaded
+
     - name: Reload Apache
       service:
         name: apache2

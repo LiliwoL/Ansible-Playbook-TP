@@ -1,0 +1,90 @@
+#########################################################
+# Playbook: SSH Keys generation and deployment / SSH configuration
+#########################################################
+---
+- name: Playbook SSH generation and deployment
+  hosts: all
+  become: true
+
+  # Emplacement d'un fichier de variables
+  vars_files:
+    - vars/default.yml
+
+  tasks:
+
+    # ========================================
+    # Installation du paquet sudo
+    # ========================================
+    - name: Install sudo Package
+      apt: name=sudo update_cache=yes state=latest
+
+
+    # ========================================
+    # Génération de la clé SSH en local (sur le contrôleur)
+    # La clé sera générée dans /tmp/sio et /tmp/sio.pub
+    # ========================================
+    - name: Generate SSH key
+      openssh_keypair:
+        path: /tmp/sio
+        type: rsa
+        size: 4096
+        state: present
+        force: no
+      run_once: yes
+      delegate_to: localhost
+
+
+    # ========================================
+    # Création de l'utilisateur sio sur les hôtes avec le mot de passe "azertysio"
+    # sio sera ajouté au groupe sudo ou wheel
+    # user in sudo or wheel group can sudo
+    # ========================================
+    - name: Create user sio
+      user:
+        name: sio
+        comment: "Compte SIO"
+        shell: /bin/bash
+        groups: sudo
+        append: yes
+        ## run command 'mkpasswd --method=sha-512' to create your own encrypted password ##
+        ## La commande mkpasswd est dans le paquet whois (apt install whois)
+        password: $6$gF1EHgeUSSwDT3$xgw22QBdZfNe3OUjJkwXZOlEsL645TpacwiYwTwlUyah03.Zh1aUTTfh7iC7Uu5WfmHBkv5fxdbJ2OkzMAPkm/
+
+
+    # ========================================
+    # Déploiement de la clé SSH sur les hôtes pour le compte sio
+    # ========================================
+    - name: Deploy SSH Key
+      authorized_key:
+        user: sio
+        key: "{{ lookup('file', '/tmp/sio.pub') }}"
+        state: present
+
+
+    # ========================================
+    # Configuration du serveur SSH
+    # A partir du template ssh-setup.j2, on modifie le fichier /etc/ssh/sshd_config
+    # ========================================
+    - name: Set up SSH server configuration
+      template:
+        # Utilisation du fichier de configuration déjà préparé
+        src: "files/ssh-setup.j2"
+        dest: "/etc/ssh/sshd_config"
+        owner: root
+        mode: '0600'
+        validate: /usr/sbin/sshd -t -f %s
+        backup: yes
+      # Handler de redémarrage du serveur SSH
+      notify:
+        - restart ssh server
+
+
+  # ========================================
+  # Handlers
+  # ========================================
+  handlers:
+    # Redémarrage du serveur SSH
+    - name: restart ssh server
+      service:
+        name: sshd
+        state: restarted

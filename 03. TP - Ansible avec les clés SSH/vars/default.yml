@@ -1,0 +1,9 @@
+---
+# Connexion root
+sshd_permitroot_login: "no"
+
+# Connexion par mot de passe
+sshd_password_authentication: "no"
+
+# Connexion par PAM
+sshd_use_pam: "no"

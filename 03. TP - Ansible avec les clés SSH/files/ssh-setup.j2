@@ -1,0 +1,46 @@
+# ================================================
+# Configuration du serveur SSH
+# Modifié par Ansible
+# ================================================
+
+# Fichiers de configuration du serveur SSH
+Include /etc/ssh/sshd_config.d/*.conf
+
+# Modification du port du serveur SSH
+Port 2222
+# Adresse d'écoute (ici toutes)
+ListenAddress 0.0.0.0
+
+Protocol 2
+
+# Logging
+LogLevel INFO
+LoginGraceTime 120
+SyslogFacility AUTH
+
+
+
+# ==============================
+# Connexions
+# ==============================
+
+#Permission de connexion pour root?
+PermitRootLogin {{ sshd_permitroot_login }}
+
+# Permission de connexion par clé publique?
+PubkeyAuthentication yes
+
+# Permission de connexion par mot de passe?
+PasswordAuthentication {{ sshd_password_authentication }}
+
+
+PermitEmptyPasswords no
+StrictModes yes
+MaxAuthTries 6
+MaxSessions 2
+UsePAM {{ sshd_use_pam }}
+X11Forwarding yes
+X11DisplayOffset 10
+PrintMotd no
+AcceptEnv LANG LC_*
+Subsystem sftp /usr/lib/openssh/sftp-server

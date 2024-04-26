@@ -28,11 +28,10 @@
       tags: [ system ]
 
 
-
     # ========================================
     # Apache Configuration
     # ========================================
-    - name: Create document root
+    - name: Create document root directory
       file:
         # Utilisation d'une variable définie dans vars/default.yml
         path: "/var/www/{{ http_host }}"
@@ -44,7 +43,7 @@
 
     - name: Set up Apache VirtualHost
       template:
-        # Utilisation du fichier de configuration déjà préparé (extension j2 pour éviter les google dorks)
+        # Utilisation du fichier de configuration déjà préparé
         src: "files/apache.conf.j2"
         dest: "/etc/apache2/sites-available/{{ http_conf }}"
       # Handler de redémarrage
@@ -68,7 +67,6 @@
       # Handler de redémarrage
       notify: Restart Apache
       tags: [ apache ]
-
 
 
     # ========================================

@@ -1,17 +1,18 @@
-# TP - Ansible pour la provision de serveurs Web
+# 1. TP - Ansible pour la provision de serveurs Web
 
+[toc]
 <!-- TOC -->
-* [TP - Ansible pour la provision de serveurs Web](#tp---ansible-pour-la-provision-de-serveurs-web)
+* [1. TP - Ansible pour la provision de serveurs Web](#1-tp---ansible-pour-la-provision-de-serveurs-web)
 * [Contexte](#contexte)
-* [Mission 1: Préparation des machines](#mission-1-préparation-des-machines)
+* [2. Mission 1: Préparation des machines](#2-mission-1-préparation-des-machines)
 * [Mission 2: Rédaction du fichier des hôtes sur le contrôleur](#mission-2-rédaction-du-fichier-des-hôtes-sur-le-contrôleur)
-* [Mission 3: Rédaction du playbook](#mission-3-rédaction-du-playbook)
-  * [Contenu du playbook](#contenu-du-playbook)
-    * [playbook.yml](#playbookyml)
+* [3. Mission 3: Rédaction du playbook](#3-mission-3-rédaction-du-playbook)
+  * [3.1. Contenu du playbook](#31-contenu-du-playbook)
+    * [3.1.1. playbook-web-server.yml](#311-playbook-web-serveryml)
     * [Fichier de variables /vars/default.yml](#fichier-de-variables-varsdefaultyml)
-    * [Fichiers de template](#fichiers-de-template)
-* [Lancer la commande](#lancer-la-commande)
-  * [Vérification](#vérification)
+    * [3.1.2. Fichiers de template](#312-fichiers-de-template)
+* [Mission 4: Lancer la commande](#mission-4-lancer-la-commande)
+  * [3.2. Vérification](#32-vérification)
 <!-- TOC -->
 v0.1
 
@@ -27,7 +28,7 @@ Cette machine hébergera le **portfolio** de l'étudiant.
 ---
 <div style="page-break-after: always;"></div>
 
-# Mission 1: Préparation des machines
+# 2. Mission 1: Préparation des machines
 
 Vous devez créer (à minima) ces machines basées sur Debian 12.5:
 
@@ -62,7 +63,7 @@ Cette machine virtuelle dispose déjà de **ssh** installé et du compte **root:
 ---
 <div style="page-break-after: always;"></div>
 
-# Mission 3: Rédaction du playbook
+# 3. Mission 3: Rédaction du playbook
 
 L’exécution de ce **playbook** exécutera les actions suivantes sur vos hôtes Ansible :
 
@@ -79,7 +80,7 @@ L’exécution de ce **playbook** exécutera les actions suivantes sur vos hôte
 11. Définir le fichier wp-config.php en utilisant le modèle fourni.
 
 ---
-> **⚠️** Pour continuer, vous devez récupérer les fichiers du **playbook** sur https://github.com/LiliwoL/Ansible-Playbook-TP
+> **⚠️** Pour continuer, vous devez récupérer les fichiers du **playbook** sur https://github.com/LiliwoL/Ansible-Playbook-TP/tree/main/02.%20TP%20-%20Ansible%20pour%20la%20provision%20de%20serveur%20Web
 
 Sur le contrôleur Ansible, vous allez devoir créer l'arboresence suivante (en utilisant les fichiers du dépôt Git):
 ```
@@ -89,16 +90,15 @@ playbook-wordpress
 │   └── wp-config.php.j2
 ├── vars
 │   └── default.yml
-├── playbook.yml
+├── playbook-web-server.yml
 └── README.md
-└── .gitignore
 ```
 ---
-## Contenu du playbook
+## 3.1. Contenu du playbook
 
-### playbook.yml
+### 3.1.1. playbook-web-server.yml
 
-> 📂 https://github.com/LiliwoL/Ansible-Playbook-TP/blob/main/playbook.yml
+> 📂 https://github.com/LiliwoL/Ansible-Playbook-TP/blob/main/02.%20TP%20-%20Ansible%20pour%20la%20provision%20de%20serveur%20Web/playbook-web-server.yml
 
 Ce fichier contient toutes les **actions** qui seront à exécuter sur l'**hôte**.
 On y retrouve étape par étape les points de la liste ci-dessus.
@@ -128,15 +128,15 @@ Notez les modules ansibles utilisés.
 ---
 ### Fichier de variables /vars/default.yml
 
-> 📂https://github.com/LiliwoL/Ansible-Playbook-TP/blob/main/vars/default.yml
+> 📂https://github.com/LiliwoL/Ansible-Playbook-TP/blob/main/02.%20TP%20-%20Ansible%20pour%20la%20provision%20de%20serveur%20Web/vars/default.yml
 
 Ce fichier contient les valeurs qui seront utilisées dans le **playbook**, comme les identifiants de la base de données, le domaine d'Apache, etc.
 
 ---
-### Fichiers de template
+### 3.1.2. Fichiers de template
 
-> 📂https://github.com/LiliwoL/Ansible-Playbook-TP/blob/main/files/apache.conf.j2
-> 📂https://github.com/LiliwoL/Ansible-Playbook-TP/blob/main/files/wp-config.php.j2
+> 📂https://github.com/LiliwoL/Ansible-Playbook-TP/blob/main/02.%20TP%20-%20Ansible%20pour%20la%20provision%20de%20serveur%20Web/files/apache.conf.j2
+> 📂https://github.com/LiliwoL/Ansible-Playbook-TP/blob/main/02.%20TP%20-%20Ansible%20pour%20la%20provision%20de%20serveur%20Web/files/wp-config.php.j2
 
 Ces fichiers sont des **templates** contenant la configuration pour les **hôtes virtuels** Apache2 et Wordpress.
 
@@ -144,21 +144,23 @@ Ces **templates** utilisent des valeurs définies dans le fichier *vars/default.
 
 Le fichier *apache.conf.j2* est un template au format **Jinja 2**. Il configure un **hôte virtuel Apache**.
 
+> Jinja 2 https://docs.ansible.com/ansible/latest/playbooks_templating.html
+
 Le fichier *wp-config.php.j2* est utilisé pour définir la configuration globale de wWordpress.
 
 ---
 <div style="page-break-after: always;"></div>
 
-# Lancer la commande
+# Mission 4: Lancer la commande
 
 Sur le contrôleur:
 
-`ansible-playbook playbook.yml -u root --ask-pass`
+`ansible-playbook playbook-web-server.yml -u root --ask-pass`
 
 > --ask-pass est nécessaire car les clés SSH ne sont pas encore gérées
 
 ---
-## Vérification
+## 3.2. Vérification
 
 Si tout s'est bien déroulé, dans votre navigateur, tapez l'adresse d'un hôte:
 
